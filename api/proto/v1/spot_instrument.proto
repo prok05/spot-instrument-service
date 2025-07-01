@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "api/proto/v1/gen;v1";
+
+import "google/protobuf/timestamp.proto";
+
+service SpotInstrumentService {
+  rpc ViewMarkets(ViewMarketsRequest) returns (ViewMarketsResponse);
+}
+
+enum UserRole {
+  ADMIN = 0;
+  USER = 1;
+}
+
+message Market {
+  string id = 1;
+  string name = 2;
+  bool enabled = 3;
+  optional google.protobuf.Timestamp deleted_at = 4;
+}
+
+// View Markets
+message ViewMarketsRequest {
+  repeated UserRole user_roles = 1;
+}
+
+message ViewMarketsResponse {
+  repeated Market markets = 1;
+}
