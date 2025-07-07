@@ -7,9 +7,11 @@ import (
 
 type (
 	Config struct {
-		App  App
-		Log  Log
-		GRPC GRPC
+		App        App
+		Log        Log
+		GRPC       GRPC
+		Jaeger     Jaeger
+		Prometheus Prometheus
 	}
 
 	App struct {
@@ -23,6 +25,14 @@ type (
 
 	Log struct {
 		Level string `env:"LOG_LEVEL,required"`
+	}
+
+	Jaeger struct {
+		GrpcAddr string `env:"JAEGER_GRPC_ADDR,required"`
+	}
+
+	Prometheus struct {
+		Addr string `env:"PROMETHEUS_ADDR,required"`
 	}
 )
 

@@ -5,14 +5,16 @@ import (
 	v1 "github.com/prok05/spot-instrument-service/api/proto/v1/gen"
 	"github.com/prok05/spot-instrument-service/internal/usecase"
 	"github.com/prok05/spot-instrument-service/pkg/logger"
+	"go.opentelemetry.io/otel"
 	pbgrpc "google.golang.org/grpc"
 )
 
 func NewMarketRouter(app *pbgrpc.Server, uc usecase.Market, l logger.Interface) {
 	r := &V1{
-		l:  l,
-		uc: uc,
-		v:  validator.New(validator.WithRequiredStructEnabled()),
+		l:      l,
+		uc:     uc,
+		v:      validator.New(validator.WithRequiredStructEnabled()),
+		tracer: otel.Tracer("sport-instrument-service/router"),
 	}
 
 	{

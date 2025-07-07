@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	pbgrpc "google.golang.org/grpc"
 	"net"
 )
@@ -28,8 +29,9 @@ func New(opts ...Option) *Server {
 		opt(s)
 	}
 
-	s.App = pbgrpc.NewServer(pbgrpc.ChainUnaryInterceptor(s.unaryInts...))
-
+	s.App = pbgrpc.NewServer(
+		pbgrpc.ChainUnaryInterceptor(s.unaryInts...),
+		pbgrpc.StatsHandler(otelgrpc.NewServerHandler()))
 	return s
 }
 

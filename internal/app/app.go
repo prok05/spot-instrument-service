@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"github.com/prok05/spot-instrument-service/config"
 	"github.com/prok05/spot-instrument-service/internal/controller/grpc"
 	"github.com/prok05/spot-instrument-service/internal/controller/grpc/interceptor"
@@ -8,6 +9,8 @@ import (
 	"github.com/prok05/spot-instrument-service/internal/repo/in_memory"
 	"github.com/prok05/spot-instrument-service/internal/usecase/market"
 	"github.com/prok05/spot-instrument-service/pkg/logger"
+	"github.com/prok05/spot-instrument-service/pkg/metric"
+	"github.com/prok05/spot-instrument-service/pkg/tracer"
 	"log"
 	"os"
 	"os/signal"
@@ -15,11 +18,34 @@ import (
 )
 
 func Run(cfg *config.Config) {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
 	// logger
 	l, err := logger.New(cfg.Log.Level)
 	if err != nil {
 		log.Fatalf("logger error: %s", err)
 	}
+	l.Info("logger initialized")
+
+	// tracer
+	shutdown, err := tracer.New(ctx, cfg)
+	if err != nil {
+		l.Fatal("app - Run - tracer.New", "failed to create tracer", err)
+	}
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			l.Fatal("app - Run - shutdown", "failed to shutdown tracer", err)
+		}
+	}()
+	l.Info("tracer connected")
+
+	// metric
+	go func() {
+		if err := metric.Start(cfg); err != nil {
+			l.Fatal("app - Run - metric.Start", "prometheus start failed", err)
+		}
+	}()
 
 	// usecase
 	marketUsecase := market.New(in_memory.New())
@@ -32,7 +58,6 @@ func Run(cfg *config.Config) {
 		server.WithUnaryInterceptor(interceptors.XRequestID()),
 		server.WithUnaryInterceptor(interceptors.Log()),
 		server.WithUnaryInterceptor(interceptors.Panic()),
-		// TODO: prometheus interceptor
 	)
 
 	grpc.NewRouter(grpcServer.App, marketUsecase, l)
@@ -40,7 +65,7 @@ func Run(cfg *config.Config) {
 	// start server
 	grpcServer.Start()
 
-	l.Info("app started", "name", cfg.App.Name, "port", cfg.GRPC.Port)
+	l.Info("service started", "name", cfg.App.Name, "port", grpcServer.Address)
 
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)

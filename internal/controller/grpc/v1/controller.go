@@ -5,11 +5,13 @@ import (
 	v1 "github.com/prok05/spot-instrument-service/api/proto/v1/gen"
 	"github.com/prok05/spot-instrument-service/internal/usecase"
 	"github.com/prok05/spot-instrument-service/pkg/logger"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type V1 struct {
 	v1.SpotInstrumentServiceServer
-	uc usecase.Market
-	l  logger.Interface
-	v  *validator.Validate
+	uc     usecase.Market
+	l      logger.Interface
+	v      *validator.Validate
+	tracer trace.Tracer
 }

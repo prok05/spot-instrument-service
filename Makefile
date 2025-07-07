@@ -1,7 +1,6 @@
 include .env
 export
 
-
 run:
 	go run cmd/app/main.go
 .PHONY: run
